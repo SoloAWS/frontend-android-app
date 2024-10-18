@@ -9,14 +9,10 @@ import androidx.compose.material.icons.filled.*
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.webkit.MimeTypeMap
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import com.misw.abcalls.ui.viewmodel.CreateIncidentViewModel
-import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.misw.abcalls.ui.viewmodel.CreateIncidentUiState
+import com.misw.abcalls.data.model.Company
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,17 +21,23 @@ fun CreateIncidentScreen(
     onIncidentCreated: () -> Unit,
     viewModel: CreateIncidentViewModel = viewModel()
 ) {
-    var incidentName by remember { mutableStateOf("") }
+    var selectedCompany by remember { mutableStateOf<Company?>(null) }
     var incidentDescription by remember { mutableStateOf("") }
     var selectedFile by remember { mutableStateOf<Uri?>(null) }
-    var nameError by remember { mutableStateOf<String?>(null) }
     var descriptionError by remember { mutableStateOf<String?>(null) }
     var fileError by remember { mutableStateOf<String?>(null) }
+    var isDropdownExpanded by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+
+    // Fixed user UUID for now
+    val userId = "fixed-user-uuid"
+
+    LaunchedEffect(userId) {
+        viewModel.loadCompanies(userId)
+    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -63,19 +65,13 @@ fun CreateIncidentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Crear Incidente",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            textAlign = TextAlign.Center,
-                            )
-                        },
+                title = { Text("Crear Incidente", color = MaterialTheme.colorScheme.onPrimary, textAlign = TextAlign.Center) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
         }
     ) { innerPadding ->
@@ -85,19 +81,33 @@ fun CreateIncidentScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            OutlinedTextField(
-                value = incidentName,
-                onValueChange = {
-                    if (it.length <= 100) {
-                        incidentName = it
-                        nameError = null
+            ExposedDropdownMenuBox(
+                expanded = isDropdownExpanded,
+                onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedCompany?.name ?: "",
+                    onValueChange = { },
+                    readOnly = true,
+                    label = { Text("Nombre Compañía") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = isDropdownExpanded,
+                    onDismissRequest = { isDropdownExpanded = false }
+                ) {
+                    uiState.companies.forEach { company ->
+                        DropdownMenuItem(
+                            text = { Text(company.name) },
+                            onClick = {
+                                selectedCompany = company
+                                isDropdownExpanded = false
+                            }
+                        )
                     }
-                },
-                label = { Text("Nombre") },
-                isError = nameError != null,
-                supportingText = { nameError?.let { Text(it) } },
-                modifier = Modifier.fillMaxWidth()
-            )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -138,31 +148,26 @@ fun CreateIncidentScreen(
 
             Button(
                 onClick = {
-                    nameError = if (incidentName.isBlank()) "El nombre es requerido" else null
                     descriptionError = if (incidentDescription.isBlank()) "La descripción es requerida" else null
 
-                    if (nameError == null && descriptionError == null && fileError == null) {
-                        viewModel.createIncident(incidentName, incidentDescription, selectedFile?.toString())
+                    if (selectedCompany != null && descriptionError == null && fileError == null) {
+                        viewModel.createIncident(incidentDescription, selectedCompany!!.id, userId, selectedFile)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = selectedCompany != null
             ) {
                 Text("Crear", color = MaterialTheme.colorScheme.onPrimary)
             }
 
-            when (val state = uiState) {
-                is CreateIncidentUiState.Loading -> {
-                    CircularProgressIndicator()
-                }
-                is CreateIncidentUiState.Success -> {
-                    LaunchedEffect(state) {
+            when {
+                uiState.isLoading -> CircularProgressIndicator()
+                uiState.error != null -> Text("Error: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+                uiState.createdIncident != null -> {
+                    LaunchedEffect(uiState.createdIncident) {
                         onIncidentCreated()
                     }
                 }
-                is CreateIncidentUiState.Error -> {
-                    Text(state.message, color = MaterialTheme.colorScheme.error)
-                }
-                else -> {} // Initial state, do nothing
             }
         }
     }
