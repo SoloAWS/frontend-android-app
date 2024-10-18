@@ -49,6 +49,15 @@ class CreateIncidentViewModel @Inject constructor(
             }
         }
     }
+
+    fun resetState() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                createdIncident = null,
+                error = null
+            )
+        }
+    }
 }
 
 data class CreateIncidentUiState(

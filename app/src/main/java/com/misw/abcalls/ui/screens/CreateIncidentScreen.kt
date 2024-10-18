@@ -27,6 +27,8 @@ fun CreateIncidentScreen(
     var descriptionError by remember { mutableStateOf<String?>(null) }
     var fileError by remember { mutableStateOf<String?>(null) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -37,6 +39,18 @@ fun CreateIncidentScreen(
 
     LaunchedEffect(userId) {
         viewModel.loadCompanies(userId)
+    }
+
+    LaunchedEffect(uiState.createdIncident) {
+        if (uiState.createdIncident != null) {
+            showSuccessDialog = true
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) {
+            showErrorDialog = true
+        }
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -160,15 +174,49 @@ fun CreateIncidentScreen(
                 Text("Crear", color = MaterialTheme.colorScheme.onPrimary)
             }
 
-            when {
-                uiState.isLoading -> CircularProgressIndicator()
-                uiState.error != null -> Text("Error: ${uiState.error}", color = MaterialTheme.colorScheme.error)
-                uiState.createdIncident != null -> {
-                    LaunchedEffect(uiState.createdIncident) {
-                        onIncidentCreated()
-                    }
-                }
+            if (uiState.isLoading) {
+                CircularProgressIndicator()
             }
         }
+    }
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showSuccessDialog = false
+                viewModel.resetState()
+                onIncidentCreated()
+            },
+            title = { Text("Éxito") },
+            text = { Text("El incidente se ha creado exitosamente.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSuccessDialog = false
+                    viewModel.resetState()
+                    onIncidentCreated()
+                }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showErrorDialog = false
+                viewModel.resetState()
+            },
+            title = { Text("Error") },
+            text = { Text("Ha ocurrido un error al crear el incidente. Por favor, inténtelo de nuevo.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showErrorDialog = false
+                    viewModel.resetState()
+                }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
