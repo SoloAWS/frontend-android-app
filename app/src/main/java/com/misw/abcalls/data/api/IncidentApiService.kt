@@ -20,6 +20,6 @@ interface IncidentApiService {
         @Part file: MultipartBody.Part?
     ): Incident
 
-    @POST("/companies")
+    @POST("/user-management/user/companies-user")
     suspend fun getCompanies(@Body userIdRequest: UserIdRequest): CompanyResponse
 }
