@@ -35,7 +35,7 @@ fun CreateIncidentScreen(
     val context = LocalContext.current
 
     // Fixed user UUID for now
-    val userId = "fixed-user-uuid"
+    val userId = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
 
     LaunchedEffect(userId) {
         viewModel.loadCompanies(userId)
