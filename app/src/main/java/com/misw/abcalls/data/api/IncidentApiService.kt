@@ -12,11 +12,11 @@ import retrofit2.http.Part
 
 interface IncidentApiService {
     @Multipart
-    @POST("/incident-management")
+    @POST("/incident-management/user-incident")
     suspend fun createIncident(
         @Part("description") description: RequestBody,
-        @Part("userId") userId: RequestBody,
-        @Part("companyId") companyId: RequestBody,
+        @Part("user_id") userId: RequestBody,
+        @Part("company_id") companyId: RequestBody,
         @Part file: MultipartBody.Part?
     ): Incident
 

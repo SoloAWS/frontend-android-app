@@ -1,7 +1,5 @@
 package com.misw.abcalls.data.model
 
-import java.time.ZonedDateTime
-
 data class Incident(
     val id: String,
     val user_id: String,
@@ -10,5 +8,5 @@ data class Incident(
     val state: String,
     val channel: String,
     val priority: String,
-    val creation_date: ZonedDateTime
+    val creation_date: String
 )
