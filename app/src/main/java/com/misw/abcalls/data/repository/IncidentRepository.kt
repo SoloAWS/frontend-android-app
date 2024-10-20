@@ -15,7 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class IncidentRepository @Inject constructor(
+open class IncidentRepository @Inject constructor(
     private val incidentApiService: IncidentApiService,
     private val context: Context
 ) {

@@ -20,7 +20,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://Infras-MyALB-4AL0qtSDHrbL-334909783.us-east-1.elb.amazonaws.com/")
+            .baseUrl("https://api.soloaws.cloud/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

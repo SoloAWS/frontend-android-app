@@ -1,5 +1,6 @@
 package com.misw.abcalls.data.repository
 
+import android.content.Context
 import com.misw.abcalls.data.api.IncidentApiService
 import com.misw.abcalls.data.model.Company
 import com.misw.abcalls.data.model.CompanyResponse
@@ -8,18 +9,19 @@ import com.misw.abcalls.data.model.UserIdRequest
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.*
-import java.time.ZonedDateTime
+import org.mockito.kotlin.*
 
 class IncidentRepositoryTest {
 
     private lateinit var mockApiService: IncidentApiService
+    private lateinit var mockContext: Context
     private lateinit var repository: IncidentRepository
 
     @Before
     fun setup() {
-        mockApiService = mock(IncidentApiService::class.java)
-        repository = IncidentRepository(mockApiService, mock())
+        mockApiService = mock()
+        mockContext = mock()
+        repository = IncidentRepository(mockApiService, mockContext)
     }
 
     @Test
@@ -27,7 +29,7 @@ class IncidentRepositoryTest {
         val userId = "testUserId"
         val expectedResponse = CompanyResponse(userId, listOf(Company("1", "Test Company")))
 
-        `when`(mockApiService.getCompanies(UserIdRequest(userId))).thenReturn(expectedResponse)
+        whenever(mockApiService.getCompanies(UserIdRequest(userId))).thenReturn(expectedResponse)
 
         val result = repository.getCompanies(userId)
 
@@ -48,14 +50,24 @@ class IncidentRepositoryTest {
             state = "open",
             channel = "mobile",
             priority = "medium",
-            creation_date = ZonedDateTime.now()
+            creation_date = "2024-10-19T14:11:28.989827Z"
         )
 
-        `when`(mockApiService.createIncident(any(), any(), any(), any())).thenReturn(expectedIncident)
+        whenever(mockApiService.createIncident(
+            description = any(),
+            userId = any(),
+            companyId = any(),
+            file = isNull()
+        )).thenReturn(expectedIncident)
 
         val result = repository.createIncident(description, companyId, userId, null)
 
-        verify(mockApiService).createIncident(any(), any(), any(), any())
+        verify(mockApiService).createIncident(
+            description = any(),
+            userId = any(),
+            companyId = any(),
+            file = isNull()
+        )
         assert(result == expectedIncident)
     }
 }

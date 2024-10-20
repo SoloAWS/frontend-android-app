@@ -1,86 +1,149 @@
 package com.misw.abcalls.ui.viewmodel
 
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import android.net.Uri
+import app.cash.turbine.test
+import com.misw.abcalls.data.api.IncidentApiService
 import com.misw.abcalls.data.model.Company
 import com.misw.abcalls.data.model.CompanyResponse
 import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.repository.IncidentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
+import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mockito.*
-import java.time.ZonedDateTime
+import org.mockito.kotlin.*
+import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalCoroutinesApi::class)
 class CreateIncidentViewModelTest {
 
-    @get:Rule
-    val instantExecutorRule = InstantTaskExecutorRule()
-
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
-
-    private lateinit var mockRepository: IncidentRepository
+    private val dispatcher = StandardTestDispatcher()
+    private lateinit var incidentRepository: IncidentRepository
+    private lateinit var incidentApiService: IncidentApiService
     private lateinit var viewModel: CreateIncidentViewModel
 
     @Before
-    fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        mockRepository = mock(IncidentRepository::class.java)
-        viewModel = CreateIncidentViewModel(mockRepository)
+    fun setUp() {
+        Dispatchers.setMain(StandardTestDispatcher())
+
+        // Mock the IncidentApiService
+        incidentApiService = mock()
+
+        // Create a real IncidentRepository with the mocked IncidentApiService
+        incidentRepository = IncidentRepository(incidentApiService, mock())
+
+        viewModel = CreateIncidentViewModel(incidentRepository)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain() // Reset the Main dispatcher after tests
     }
 
     @Test
-    fun `loadCompanies updates uiState with companies`() = testScope.runBlockingTest {
-        val userId = "testUserId"
-        val companies = listOf(Company("1", "Test Company"))
-        val companyResponse = CompanyResponse(userId, companies)
+    fun `loadCompanies successfully loads companies`() = runTest(dispatcher) {
+        // Prepare mock data
+        val mockCompanies = listOf(Company("1", "Company A"), Company("2", "Company B"))
+        val mockResponse = CompanyResponse("user123", mockCompanies)
+        whenever(incidentRepository.getCompanies(eq("user123"))).thenReturn(mockResponse)
 
-        `when`(mockRepository.getCompanies(userId)).thenReturn(companyResponse)
+        // Run the test
+        viewModel.loadCompanies("user123")
 
-        viewModel.loadCompanies(userId)
+        advanceUntilIdle()
+        println("Current UI State: ${viewModel.uiState.value}")
+        // Assert the final state
+        assertEquals(mockCompanies, viewModel.uiState.value.companies)
+        assertEquals(false, viewModel.uiState.value.isLoading)
 
-        assert(viewModel.uiState.value.companies == companies)
-        verify(mockRepository).getCompanies(userId)
+        verify(incidentApiService).getCompanies(any())
     }
 
+    @OptIn(ExperimentalTime::class)
     @Test
-    fun `createIncident updates uiState with created incident`() = testScope.runBlockingTest {
-        val description = "Test description"
-        val companyId = "testCompanyId"
-        val userId = "testUserId"
-        val createdIncident = Incident(
+    fun `loadCompanies sets error when repository throws exception`() = runTest(dispatcher) {
+        // Setup exception
+        whenever(incidentRepository.getCompanies(any())).thenThrow(RuntimeException("Network error"))
+
+        // Run the test
+        viewModel.loadCompanies("user123")
+
+        // Collect flow emissions
+        viewModel.uiState.test {
+            assertEquals(awaitItem().isLoading, true)
+            assertEquals(awaitItem().error, "Network error")
+            assertEquals(awaitItem().isLoading, false)
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    @Test
+    fun `createIncident successfully creates an incident`() = runTest(dispatcher) {
+        // Prepare mock data
+        val mockIncident = Incident(
             id = "testId",
-            user_id = userId,
-            company_id = companyId,
-            description = description,
+            user_id = "userId",
+            company_id = "companyId",
+            description = "description",
             state = "open",
             channel = "mobile",
             priority = "medium",
-            creation_date = ZonedDateTime.now()
+            creation_date = "2024-10-19T14:11:28.989827Z"
         )
+        whenever(incidentRepository.createIncident(any(), any(), any(), any())).thenReturn(mockIncident)
 
-        `when`(mockRepository.createIncident(description, companyId, userId, null)).thenReturn(createdIncident)
+        // Run the test
+        viewModel.createIncident("description", "companyId", "userId", null)
 
-        viewModel.createIncident(description, companyId, userId, null)
+        // Collect flow emissions
+        viewModel.uiState.test {
+            assertEquals(awaitItem().isLoading, true)
+            assertEquals(awaitItem().createdIncident, mockIncident)
+            assertEquals(awaitItem().isLoading, false)
+        }
+    }
 
-        assert(viewModel.uiState.value.createdIncident == createdIncident)
-        verify(mockRepository).createIncident(description, companyId, userId, null)
+    @OptIn(ExperimentalTime::class)
+    @Test
+    fun `createIncident sets error when repository throws exception`() = runTest(dispatcher) {
+        // Setup exception
+        whenever(incidentRepository.createIncident(any(), any(), any(), any())).thenThrow(RuntimeException("Error creating incident"))
+
+        // Run the test
+        viewModel.createIncident("description", "companyId", "userId", null)
+
+        // Collect flow emissions
+        viewModel.uiState.test {
+            assertEquals(awaitItem().isLoading, true)
+            assertEquals(awaitItem().error, "Error creating incident")
+            assertEquals(awaitItem().isLoading, false)
+        }
     }
 
     @Test
-    fun `resetState clears createdIncident and error`() = testScope.runBlockingTest {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            createdIncident = mock(),
-            error = "Test error"
-        )
+    fun `resetState resets uiState to default values`() = runTest(dispatcher) {
+        // Assume initial state with some data
+        viewModel.createIncident("description", "companyId", "userId", null)
+        advanceUntilIdle()  // Let the coroutine finish
 
+        // Reset state
         viewModel.resetState()
 
-        assert(viewModel.uiState.value.createdIncident == null)
-        assert(viewModel.uiState.value.error == null)
+        // Collect the UI state and assert default values
+        val uiState = viewModel.uiState.first()
+        assertEquals(uiState.createdIncident, null)
+        assertEquals(uiState.error, null)
     }
 }
