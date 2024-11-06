@@ -10,3 +10,7 @@ data class Incident(
     val priority: String,
     val creation_date: String
 )
+
+data class IncidentListResponse(
+    val incidents: List<Incident>
+)

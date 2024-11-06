@@ -3,16 +3,22 @@ package com.misw.abcalls.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.misw.abcalls.data.model.DocumentType
+import com.misw.abcalls.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.util.regex.Pattern
 
 @HiltViewModel
-class UserRegistrationViewModel @Inject constructor() : ViewModel() {
+class UserRegistrationViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(UserRegistrationUiState())
     val uiState: StateFlow<UserRegistrationUiState> = _uiState
 
@@ -70,23 +76,48 @@ class UserRegistrationViewModel @Inject constructor() : ViewModel() {
     }
 
     fun register() {
-        _uiState.update { it.copy(isLoading = true) }
+        val currentState = _uiState.value
+        if (!isFormValid(currentState)) return
+
         viewModelScope.launch {
             try {
-                // TODO: Implement actual registration API call
-                // Simulating API delay
-                kotlinx.coroutines.delay(1500)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        registrationSuccess = true
+                val registrationResult = userRepository.registerUser(
+                    name = currentState.name,
+                    email = currentState.email,
+                    password = currentState.password,
+                    documentType = currentState.documentType.backendValue,
+                    documentId = currentState.documentId
+                )
+
+                if (registrationResult.isSuccess) {
+                    // Automatic login after successful registration
+                    val loginResult = userRepository.login(
+                        email = currentState.email,
+                        password = currentState.password
                     )
+
+                    if (loginResult.isSuccess) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                registrationSuccess = true
+                            )
+                        }
+                    } else {
+                        throw loginResult.exceptionOrNull() ?: Exception("Login failed")
+                    }
+                } else {
+                    throw registrationResult.exceptionOrNull() ?: Exception("Registration failed")
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Error desconocido"
+                        error = when {
+                            e.message?.contains("400") == true -> "Este correo ya está en uso"
+                            e.message?.contains("connection") == true -> "Error de conexión. Intenta nuevamente"
+                            else -> "Error en el registro. Por favor intenta nuevamente"
+                        }
                     )
                 }
             }
@@ -163,6 +194,29 @@ class UserRegistrationViewModel @Inject constructor() : ViewModel() {
     fun resetSuccess() {
         _uiState.update { it.copy(registrationSuccess = false) }
     }
+
+    private fun isFormValid(state: UserRegistrationUiState): Boolean {
+        return state.name.isNotBlank() &&
+                state.email.isNotBlank() &&
+                state.password.isNotBlank() &&
+                state.confirmPassword.isNotBlank() &&
+                state.documentId.isNotBlank() &&
+                state.termsAccepted &&
+                state.nameError == null &&
+                state.emailError == null &&
+                state.passwordError == null &&
+                state.confirmPasswordError == null &&
+                state.documentIdError == null &&
+                !state.isLoading
+    }
+
+    val isFormValid = _uiState.map { state ->
+        isFormValid(state)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 }
 
 data class UserRegistrationUiState(
@@ -182,3 +236,4 @@ data class UserRegistrationUiState(
     val error: String? = null,
     val registrationSuccess: Boolean = false
 )
+

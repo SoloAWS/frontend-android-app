@@ -2,11 +2,13 @@ package com.misw.abcalls.data.api
 
 import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.model.CompanyResponse
+import com.misw.abcalls.data.model.IncidentListResponse
 import com.misw.abcalls.data.model.UserIdRequest
 import retrofit2.http.POST
 import retrofit2.http.Body
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 
@@ -22,4 +24,7 @@ interface IncidentApiService {
 
     @POST("/user-management/user/companies-user")
     suspend fun getCompanies(@Body userIdRequest: UserIdRequest): CompanyResponse
+
+    @GET("/incident-management/incidents")
+    suspend fun getUserIncidents(): IncidentListResponse
 }

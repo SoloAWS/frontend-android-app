@@ -19,6 +19,7 @@ fun UserRegistrationScreen(
     viewModel: UserRegistrationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isFormValid by viewModel.isFormValid.collectAsState()
     var isDocumentTypeExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.registrationSuccess) {
@@ -138,7 +139,7 @@ fun UserRegistrationScreen(
 
             Button(
                 onClick = { viewModel.register() },
-                enabled = isFormValid(uiState),
+                enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (uiState.isLoading) {
@@ -173,18 +174,3 @@ fun UserRegistrationScreen(
         )
     }
 }
-
-    private fun isFormValid(state: UserRegistrationUiState): Boolean {
-        return state.name.isNotBlank() &&
-                state.email.isNotBlank() &&
-                state.password.isNotBlank() &&
-                state.confirmPassword.isNotBlank() &&
-                state.documentId.isNotBlank() &&
-                state.termsAccepted &&
-                state.nameError == null &&
-                state.emailError == null &&
-                state.passwordError == null &&
-                state.confirmPasswordError == null &&
-                state.documentIdError == null &&
-                !state.isLoading
-    }

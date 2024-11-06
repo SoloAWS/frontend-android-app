@@ -41,4 +41,13 @@ class IncidentRepository @Inject constructor(
 
         return incidentApiService.createIncident(descriptionPart, userIdPart, companyIdPart, filePart)
     }
+
+    suspend fun getUserIncidents(): Result<List<Incident>> {
+        return try {
+            val response = incidentApiService.getUserIncidents()
+            Result.success(response.incidents)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
