@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.ui.viewmodel.IncidentItem
 import com.misw.abcalls.ui.viewmodel.IncidentListViewModel
 
@@ -22,7 +23,6 @@ fun IncidentListScreen(
     viewModel: IncidentListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
 
     Scaffold(
         topBar = {
@@ -39,7 +39,11 @@ fun IncidentListScreen(
                 onClick = onCreateIncident,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Crear incidente", tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Crear incidente",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     ) { padding ->
@@ -50,7 +54,7 @@ fun IncidentListScreen(
         ) {
             // Search bar
             OutlinedTextField(
-                value = searchQuery,
+                value = uiState.searchQuery,
                 onValueChange = { viewModel.updateSearchQuery(it) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,7 +91,7 @@ fun IncidentListScreen(
                     }
                 }
 
-                uiState.filteredIncidents.isEmpty() && searchQuery.isNotEmpty() -> {
+                uiState.filteredIncidents.isEmpty() && uiState.searchQuery.isNotEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -121,12 +125,11 @@ fun IncidentListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IncidentCard(incident: IncidentItem) {
+fun IncidentCard(incident: Incident) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = { /* TODO: Navigate to incident details */ }
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -134,43 +137,38 @@ fun IncidentCard(incident: IncidentItem) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = incident.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = incident.status,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+            Text(
+                text = incident.description,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                RiskLevelChip(riskLevel = incident.riskLevel)
+                PriorityChip(priority = incident.priority)
                 Text(
-                    text = incident.creationDate,
-                    style = MaterialTheme.typography.bodySmall
+                    text = incident.state,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
+
+            Text(
+                text = incident.creation_date,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-fun RiskLevelChip(riskLevel: String) {
-    val (backgroundColor, contentColor) = when (riskLevel) {
-        "Alto" -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
-        "Medio" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
+fun PriorityChip(priority: String) {
+    val (backgroundColor, contentColor) = when (priority.lowercase()) {
+        "high" -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
+        "medium" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     }
 
@@ -181,7 +179,12 @@ fun RiskLevelChip(riskLevel: String) {
         modifier = Modifier.padding(end = 8.dp)
     ) {
         Text(
-            text = "Riesgo: $riskLevel",
+            text = when(priority.lowercase()) {
+                "high" -> "Alto"
+                "medium" -> "Medio"
+                "low" -> "Bajo"
+                else -> priority
+            },
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
