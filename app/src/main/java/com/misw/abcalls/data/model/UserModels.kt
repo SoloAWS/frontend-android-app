@@ -1,15 +1,45 @@
 package com.misw.abcalls.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class UserIdRequest(
     val id: String
 )
 
 data class UserRegistrationRequest(
-    val name: String,
+    @SerializedName("username")
     val email: String,
-    val password: String,
+
+    @SerializedName("first_name")
+    val firstName: String,
+
+    @SerializedName("last_name")
+    val lastName: String,
+
+    @SerializedName("document_id")
+    val documentId: String,
+
+    @SerializedName("document_type")
     val documentType: String,
-    val documentId: String
+
+    val password: String,
+
+    @SerializedName("birth_date")
+    val birthDate: String = "1990-01-01",
+
+    @SerializedName("phone_number")
+    val phoneNumber: String = "",
+
+    val importance: Int = 5,
+
+    @SerializedName("allow_call")
+    val allowCall: Boolean = true,
+
+    @SerializedName("allow_sms")
+    val allowSms: Boolean = true,
+
+    @SerializedName("allow_email")
+    val allowEmail: Boolean = true
 )
 
 data class UserLoginRequest(
@@ -18,6 +48,7 @@ data class UserLoginRequest(
 )
 
 data class AuthResponse(
+    @SerializedName("access_token")
     val token: String
 )
 

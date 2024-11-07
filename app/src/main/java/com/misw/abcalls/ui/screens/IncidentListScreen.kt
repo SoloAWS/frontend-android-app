@@ -1,5 +1,6 @@
 package com.misw.abcalls.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,8 +14,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.misw.abcalls.data.model.Incident
-import com.misw.abcalls.ui.viewmodel.IncidentItem
 import com.misw.abcalls.ui.viewmodel.IncidentListViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +25,7 @@ fun IncidentListScreen(
     viewModel: IncidentListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isRefreshing = remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -91,32 +94,45 @@ fun IncidentListScreen(
                     }
                 }
 
-                uiState.filteredIncidents.isEmpty() && uiState.searchQuery.isNotEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No se encontraron incidentes")
-                    }
-                }
-
-                uiState.incidents.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No tienes incidentes registrados")
-                    }
-                }
-
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    SwipeRefresh(
+                        state = rememberSwipeRefreshState(isRefreshing = isRefreshing.value),
+                        onRefresh = {
+                            isRefreshing.value = true
+                            viewModel.refresh()
+                            isRefreshing.value = false
+                        }
                     ) {
-                        items(uiState.filteredIncidents) { incident ->
-                            IncidentCard(incident = incident)
+                        when {
+                            uiState.filteredIncidents.isEmpty() && uiState.searchQuery.isNotEmpty() -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("No se encontraron incidentes")
+                                }
+                            }
+
+                            uiState.incidents.isEmpty() -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("No tienes incidentes registrados")
+                                }
+                            }
+
+                            else -> {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(uiState.filteredIncidents) { incident ->
+                                        IncidentCard(incident = incident)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -150,13 +166,19 @@ fun IncidentCard(incident: Incident) {
             ) {
                 PriorityChip(priority = incident.priority)
                 Text(
-                    text = incident.state,
+                    text = when(incident.state.lowercase()) {
+                        "open" -> "Abierto"
+                        "closed" -> "Resuelto"
+                        "escalated" -> "Escalado"
+                        "in_progress" -> "En Progreso"
+                        else -> incident.state
+                    },
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
 
             Text(
-                text = incident.creation_date,
+                text = incident.formattedDate,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -168,10 +190,10 @@ fun IncidentCard(incident: Incident) {
 fun PriorityChip(priority: String) {
     val (backgroundColor, contentColor) = when (priority.lowercase()) {
         "high" -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
-        "medium" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.tertiary
+        "medium" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
         else -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     }
-
+    Log.d("incident chip", "${priority} ${priority.lowercase()}")
     Surface(
         color = backgroundColor,
         contentColor = contentColor,
@@ -179,7 +201,7 @@ fun PriorityChip(priority: String) {
         modifier = Modifier.padding(end = 8.dp)
     ) {
         Text(
-            text = when(priority.lowercase()) {
+            text = when (priority.lowercase()) {
                 "high" -> "Alto"
                 "medium" -> "Medio"
                 "low" -> "Bajo"

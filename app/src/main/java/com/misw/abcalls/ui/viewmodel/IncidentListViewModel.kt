@@ -23,6 +23,7 @@ class IncidentListViewModel @Inject constructor(
         val searchQuery: String = ""
     )
 
+    private val _shouldRefresh = MutableStateFlow(true)
     private val _uiState = MutableStateFlow(IncidentListUiState())
     val uiState: StateFlow<IncidentListUiState> = _uiState
 
@@ -30,9 +31,53 @@ class IncidentListViewModel @Inject constructor(
     val searchQuery = _searchQuery.asStateFlow()
 
     private var searchJob: Job? = null
+    private var refreshJob: Job? = null
 
     init {
-        loadIncidents()
+        viewModelScope.launch {
+            _shouldRefresh
+                .filter { it }
+                .collect {
+                    loadIncidents()
+                    _shouldRefresh.value = false
+                }
+        }
+    }
+    fun refresh() {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val result = incidentRepository.getUserIncidents()
+                result.fold(
+                    onSuccess = { incidents ->
+                        _uiState.update { state ->
+                            state.copy(
+                                incidents = incidents.sortedByDescending { it.creation_date },
+                                filteredIncidents = incidents.sortedByDescending { it.creation_date },
+                                isLoading = false,
+                                error = null
+                            )
+                        }
+                    },
+                    onFailure = { _ ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "Error de conexión. Por favor intenta más tarde"
+                            )
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Error de conexión. Por favor intenta más tarde"
+                    )
+                }
+            }
+        }
     }
 
     fun updateSearchQuery(query: String) {
@@ -98,10 +143,3 @@ class IncidentListViewModel @Inject constructor(
         loadIncidents()
     }
 }
-
-data class IncidentItem(
-    val name: String,
-    val riskLevel: String,
-    val status: String,
-    val creationDate: String
-)

@@ -9,7 +9,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.misw.abcalls.data.model.DocumentType
-import com.misw.abcalls.ui.viewmodel.UserRegistrationUiState
 import com.misw.abcalls.ui.viewmodel.UserRegistrationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,12 +47,21 @@ fun UserRegistrationScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
-                value = uiState.name,
-                onValueChange = { viewModel.updateName(it) },
-                label = { Text("Nombre completo") },
-                isError = uiState.nameError != null,
-                supportingText = { uiState.nameError?.let { Text(it) } },
-                modifier = Modifier.fillMaxWidth()
+                value = uiState.firstName,
+                onValueChange = { viewModel.updateFirstName(it) },
+                label = { Text("Nombre") },
+                isError = uiState.firstNameError != null,
+                supportingText = { uiState.firstNameError?.let { Text(it) } },
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            OutlinedTextField(
+                value = uiState.lastName,
+                onValueChange = { viewModel.updateLastName(it) },
+                label = { Text("Apellido") },
+                isError = uiState.lastNameError != null,
+                supportingText = { uiState.lastNameError?.let { Text(it) } },
+                modifier = Modifier.fillMaxWidth(),
             )
             ExposedDropdownMenuBox(
                 expanded = isDocumentTypeExpanded,
@@ -165,7 +173,7 @@ fun UserRegistrationScreen(
         AlertDialog(
             onDismissRequest = { viewModel.resetError() },
             title = { Text("Error") },
-            text = { Text(uiState.error!!) },
+            text = { Text(uiState.error ?: "") },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetError() }) {
                     Text("OK")

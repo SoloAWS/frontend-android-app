@@ -25,6 +25,6 @@ interface IncidentApiService {
     @POST("/user-management/user/companies-user")
     suspend fun getCompanies(@Body userIdRequest: UserIdRequest): CompanyResponse
 
-    @GET("/incident-management/incidents")
+    @GET("/incident-management/incidents-user")
     suspend fun getUserIncidents(): IncidentListResponse
 }

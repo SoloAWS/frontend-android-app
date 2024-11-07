@@ -12,14 +12,15 @@ class UserRepository @Inject constructor(
     private val tokenManager: TokenManager
 ) {
     suspend fun registerUser(
-        name: String,
+        firstName: String,
+        lastName: String,
         email: String,
         password: String,
         documentType: String,
         documentId: String
     ): Result<UserRegistrationResponse> {
         return try {
-            val request = UserRegistrationRequest(name, email, password, documentType, documentId)
+            val request = UserRegistrationRequest(email, firstName, lastName, documentId, documentType, password)
             val response = userApiService.registerUser(request)
             Result.success(response)
         } catch (e: Exception) {

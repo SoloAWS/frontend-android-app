@@ -37,7 +37,8 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.soloaws.cloud/")
+            //.baseUrl("https://api.soloaws.cloud/")
+            .baseUrl("http://192.168.68.111:8010/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

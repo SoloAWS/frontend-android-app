@@ -1,5 +1,6 @@
 package com.misw.abcalls.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.misw.abcalls.data.model.DocumentType
@@ -21,6 +22,19 @@ class UserRegistrationViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(UserRegistrationUiState())
     val uiState: StateFlow<UserRegistrationUiState> = _uiState
+    init {
+        _uiState.update {
+            it.copy(
+                firstName = "John",
+                lastName = "Doe",
+                email = "john.doe@example.com",
+                password = "securePassword123!",
+                confirmPassword = "securePassword123!",
+                documentType = DocumentType.PASSPORT,
+                documentId = "PASS1"
+            )
+        }
+    }
 
     private val emailPattern = Pattern.compile(
         "[a-zA-Z0-9+._%\\-]{1,256}" +
@@ -32,11 +46,20 @@ class UserRegistrationViewModel @Inject constructor(
                 ")+"
     )
 
-    fun updateName(name: String) {
+    fun updateFirstName(firstName: String) {
         _uiState.update { currentState ->
             currentState.copy(
-                name = name,
-                nameError = validateName(name)
+                firstName = firstName,
+                firstNameError = validateName(firstName, "nombre")
+            )
+        }
+    }
+
+    fun updateLastName(lastName: String) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                lastName = lastName,
+                lastNameError = validateName(lastName, "apellido")
             )
         }
     }
@@ -82,7 +105,8 @@ class UserRegistrationViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val registrationResult = userRepository.registerUser(
-                    name = currentState.name,
+                    firstName = currentState.firstName,
+                    lastName = currentState.lastName,
                     email = currentState.email,
                     password = currentState.password,
                     documentType = currentState.documentType.backendValue,
@@ -90,7 +114,6 @@ class UserRegistrationViewModel @Inject constructor(
                 )
 
                 if (registrationResult.isSuccess) {
-                    // Automatic login after successful registration
                     val loginResult = userRepository.login(
                         email = currentState.email,
                         password = currentState.password
@@ -116,7 +139,7 @@ class UserRegistrationViewModel @Inject constructor(
                         error = when {
                             e.message?.contains("400") == true -> "Este correo ya está en uso"
                             e.message?.contains("connection") == true -> "Error de conexión. Intenta nuevamente"
-                            else -> "Error en el registro. Por favor intenta nuevamente"
+                            else -> "Error en el registro. Por favor intenta nuevamente: ${e.message}"
                         }
                     )
                 }
@@ -124,12 +147,13 @@ class UserRegistrationViewModel @Inject constructor(
         }
     }
 
-    private fun validateName(name: String): String? {
+    private fun validateName(name: String, fieldName: String): String? {
         return when {
-            name.isBlank() -> "El nombre es requerido"
-            name.length < 2 -> "El nombre debe tener al menos 2 caracteres"
-            name.length > 100 -> "El nombre no puede exceder 100 caracteres"
-            !name.matches(Regex("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$")) -> "El nombre solo puede contener letras y espacios"
+            name.isBlank() -> "El $fieldName es requerido"
+            name.length < 2 -> "El $fieldName debe tener al menos 2 caracteres"
+            name.length > 50 -> "El $fieldName no puede exceder 50 caracteres"
+            !name.matches(Regex("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$")) ->
+                "El $fieldName solo puede contener letras y espacios"
             else -> null
         }
     }
@@ -188,21 +212,27 @@ class UserRegistrationViewModel @Inject constructor(
     }
 
     fun resetError() {
-        _uiState.update { it.copy(error = null) }
+        try {
+            _uiState.value = _uiState.value.copy(error = null)
+        } catch (e: Exception) {
+            Log.e("UserRegistrationVM", "Error resetting error state", e)
+        }
     }
 
     fun resetSuccess() {
         _uiState.update { it.copy(registrationSuccess = false) }
     }
 
-    private fun isFormValid(state: UserRegistrationUiState): Boolean {
-        return state.name.isNotBlank() &&
+    private fun isFormValid(state: UserRegistrationUiState):    Boolean {
+        return state.firstName.isNotBlank() &&
+                state.lastName.isNotBlank() &&
                 state.email.isNotBlank() &&
                 state.password.isNotBlank() &&
                 state.confirmPassword.isNotBlank() &&
                 state.documentId.isNotBlank() &&
                 state.termsAccepted &&
-                state.nameError == null &&
+                state.firstNameError == null &&
+                state.lastNameError == null &&
                 state.emailError == null &&
                 state.passwordError == null &&
                 state.confirmPasswordError == null &&
@@ -220,18 +250,21 @@ class UserRegistrationViewModel @Inject constructor(
 }
 
 data class UserRegistrationUiState(
-    val name: String = "",
     val email: String = "",
-    val password: String = "",
-    val confirmPassword: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
     val documentType: DocumentType = DocumentType.ID_CARD,
     val documentId: String = "",
+    val password: String = "",
+    val confirmPassword: String = "",
     val termsAccepted: Boolean = false,
-    val nameError: String? = null,
     val emailError: String? = null,
+    val firstNameError: String? = null,
+    val lastNameError: String? = null,
+    val documentTypeError: String? = null,
+    val documentIdError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
-    val documentIdError: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val registrationSuccess: Boolean = false
