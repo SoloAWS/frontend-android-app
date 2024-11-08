@@ -47,8 +47,6 @@ class CreateIncidentViewModel @Inject constructor(
                 val incident = incidentRepository.createIncident(description, companyId, fileUri)
                 _uiState.update { it.copy(createdIncident = incident, isLoading = false) }
             } catch (e: Exception) {
-
-                e.message?.let { Log.e("API response", it) }
                 _uiState.update { it.copy(error = e.message ?: "Error creating incident", isLoading = false) }
             }
         }

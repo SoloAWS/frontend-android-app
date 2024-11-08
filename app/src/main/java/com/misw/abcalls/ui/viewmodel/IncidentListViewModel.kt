@@ -51,8 +51,6 @@ class IncidentListViewModel @Inject constructor(
                 val result = incidentRepository.getUserIncidents()
                 result.fold(
                     onSuccess = { incidents ->
-                        Log.d("IncidentListViewModel", "Received ${incidents.size} incidents")
-                        Log.d("IncidentListViewModel", "Current state incidents: ${_uiState.value.incidents.size}")
                         val sortedIncidents = incidents.sortedByDescending { it.creation_date }
                         _uiState.update { state ->
                             state.copy(
@@ -63,10 +61,8 @@ class IncidentListViewModel @Inject constructor(
                                 searchQuery = state.searchQuery // Preserve search query
                             )
                         }
-                        Log.d("IncidentListViewModel", "Updated state incidents: ${_uiState.value.incidents.size}")
                     },
                     onFailure = { error ->
-                        Log.e("IncidentListViewModel", "Error updating incidents", error)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -76,7 +72,6 @@ class IncidentListViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
-                Log.e("IncidentListViewModel", "Exception updating incidents", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,

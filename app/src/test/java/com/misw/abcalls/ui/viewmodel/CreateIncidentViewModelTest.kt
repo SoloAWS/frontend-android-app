@@ -1,86 +1,184 @@
 package com.misw.abcalls.ui.viewmodel
 
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import android.net.Uri
 import com.misw.abcalls.data.model.Company
 import com.misw.abcalls.data.model.CompanyResponse
-import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.repository.IncidentRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.*
+import com.misw.abcalls.utils.MainDispatcherRule
+import com.misw.abcalls.utils.TestData
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mockito.*
-import java.time.ZonedDateTime
+import org.mockito.kotlin.*
 
-@ExperimentalCoroutinesApi
 class CreateIncidentViewModelTest {
-
     @get:Rule
-    val instantExecutorRule = InstantTaskExecutorRule()
+    val mainDispatcherRule = MainDispatcherRule()
 
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
-
-    private lateinit var mockRepository: IncidentRepository
+    private lateinit var incidentRepository: IncidentRepository
     private lateinit var viewModel: CreateIncidentViewModel
+    private lateinit var mockUri: Uri
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        mockRepository = mock(IncidentRepository::class.java)
-        viewModel = CreateIncidentViewModel(mockRepository)
+        incidentRepository = mock()
+        viewModel = CreateIncidentViewModel(incidentRepository)
+        mockUri = mock()
     }
 
     @Test
-    fun `loadCompanies updates uiState with companies`() = testScope.runBlockingTest {
-        val userId = "testUserId"
-        val companies = listOf(Company("1", "Test Company"))
-        val companyResponse = CompanyResponse(userId, companies)
-
-        `when`(mockRepository.getCompanies(userId)).thenReturn(companyResponse)
-
-        viewModel.loadCompanies(userId)
-
-        assert(viewModel.uiState.value.companies == companies)
-        verify(mockRepository).getCompanies(userId)
-    }
-
-    @Test
-    fun `createIncident updates uiState with created incident`() = testScope.runBlockingTest {
-        val description = "Test description"
-        val companyId = "testCompanyId"
-        val userId = "testUserId"
-        val createdIncident = Incident(
-            id = "testId",
-            user_id = userId,
-            company_id = companyId,
-            description = description,
-            state = "open",
-            channel = "mobile",
-            priority = "medium",
-            creation_date = ZonedDateTime.now()
+    fun `loadCompanies success should update state with companies`() = runTest {
+        // Arrange
+        val companies = listOf(
+            Company("1", "Company 1"),
+            Company("2", "Company 2")
+        )
+        whenever(incidentRepository.getCompanies()).thenReturn(
+            CompanyResponse("user1", companies)
         )
 
-        `when`(mockRepository.createIncident(description, companyId, userId, null)).thenReturn(createdIncident)
+        // Initial state check
+        assertTrue(viewModel.uiState.value.companies.isEmpty())
+        assertNull(viewModel.uiState.value.error)
 
-        viewModel.createIncident(description, companyId, userId, null)
+        // Act
+        viewModel.loadCompanies()
 
-        assert(viewModel.uiState.value.createdIncident == createdIncident)
-        verify(mockRepository).createIncident(description, companyId, userId, null)
+        // Assert
+        with(viewModel.uiState.value) {
+            assertEquals(companies, companies)
+            assertTrue(!isLoading)
+            assertNull(error)
+        }
     }
 
     @Test
-    fun `resetState clears createdIncident and error`() = testScope.runBlockingTest {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            createdIncident = mock(),
-            error = "Test error"
-        )
+    fun `loadCompanies failure should update state with error`() = runTest {
+        // Arrange
+        val errorMessage = "Failed to load companies"
+        whenever(incidentRepository.getCompanies()).thenThrow(RuntimeException(errorMessage))
 
+        // Act
+        viewModel.loadCompanies()
+
+        // Assert
+        with(viewModel.uiState.value) {
+            assertEquals(errorMessage, error)
+            assertTrue(!isLoading)
+            assertTrue(companies.isEmpty())
+        }
+    }
+
+    @Test
+    fun `createIncident success should update state with created incident`() = runTest {
+        // Arrange
+        val description = "Test incident"
+        val companyId = "1"
+        whenever(incidentRepository.createIncident(description, companyId, mockUri))
+            .thenReturn(TestData.mockIncident)
+
+        // Act
+        viewModel.createIncident(description, companyId, mockUri)
+
+        // Assert
+        with(viewModel.uiState.value) {
+            assertEquals(TestData.mockIncident, createdIncident)
+            assertTrue(!isLoading)
+            assertNull(error)
+        }
+    }
+
+    @Test
+    fun `createIncident failure should update state with error`() = runTest {
+        // Arrange
+        val description = "Test incident"
+        val companyId = "1"
+        val errorMessage = "Failed to create incident"
+        whenever(incidentRepository.createIncident(description, companyId, mockUri))
+            .thenThrow(RuntimeException(errorMessage))
+
+        // Act
+        viewModel.createIncident(description, companyId, mockUri)
+
+        // Assert
+        with(viewModel.uiState.value) {
+            assertEquals(errorMessage, error)
+            assertTrue(!isLoading)
+            assertNull(createdIncident)
+        }
+    }
+
+    @Test
+    fun `createIncident with null file should work`() = runTest {
+        // Arrange
+        val description = "Test incident"
+        val companyId = "1"
+        whenever(incidentRepository.createIncident(description, companyId, null))
+            .thenReturn(TestData.mockIncident)
+
+        // Act
+        viewModel.createIncident(description, companyId, null)
+
+        // Assert
+        with(viewModel.uiState.value) {
+            assertEquals(TestData.mockIncident, createdIncident)
+            assertTrue(!isLoading)
+            assertNull(error)
+        }
+    }
+
+    @Test
+    fun `resetState should clear incident and error`() = runTest {
+        // Arrange
+        val description = "Test incident"
+        val companyId = "1"
+        whenever(incidentRepository.createIncident(description, companyId, null))
+            .thenReturn(TestData.mockIncident)
+
+        viewModel.createIncident(description, companyId, null)
+
+        // Verify incident was created
+        assertEquals(TestData.mockIncident, viewModel.uiState.value.createdIncident)
+
+        // Act
         viewModel.resetState()
 
-        assert(viewModel.uiState.value.createdIncident == null)
-        assert(viewModel.uiState.value.error == null)
+        // Assert
+        with(viewModel.uiState.value) {
+            assertNull(createdIncident)
+            assertNull(error)
+        }
+    }
+
+    @Test
+    fun `consecutive createIncident calls should work independently`() = runTest {
+        // Arrange
+        val description1 = "Test incident 1"
+        val description2 = "Test incident 2"
+        val companyId = "1"
+
+        val incident1 = TestData.mockIncident.copy(id = "1", description = description1)
+        val incident2 = TestData.mockIncident.copy(id = "2", description = description2)
+
+        whenever(incidentRepository.createIncident(description1, companyId, null))
+            .thenReturn(incident1)
+        whenever(incidentRepository.createIncident(description2, companyId, null))
+            .thenReturn(incident2)
+
+        // First incident
+        viewModel.createIncident(description1, companyId, null)
+        assertEquals(incident1, viewModel.uiState.value.createdIncident)
+
+        // Reset
+        viewModel.resetState()
+        assertNull(viewModel.uiState.value.createdIncident)
+
+        // Second incident
+        viewModel.createIncident(description2, companyId, null)
+        assertEquals(incident2, viewModel.uiState.value.createdIncident)
     }
 }

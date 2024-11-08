@@ -1,61 +1,72 @@
 package com.misw.abcalls.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.misw.abcalls.data.api.IncidentApiService
-import com.misw.abcalls.data.model.Company
-import com.misw.abcalls.data.model.CompanyResponse
-import com.misw.abcalls.data.model.Incident
-import com.misw.abcalls.data.model.UserIdRequest
-import kotlinx.coroutines.runBlocking
+import com.misw.abcalls.data.api.TokenManager
+import com.misw.abcalls.utils.MainDispatcherRule
+import com.misw.abcalls.utils.TestData
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mockito.*
-import java.time.ZonedDateTime
+import org.mockito.kotlin.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 
 class IncidentRepositoryTest {
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var mockApiService: IncidentApiService
-    private lateinit var repository: IncidentRepository
+    private lateinit var incidentApiService: IncidentApiService
+    private lateinit var tokenManager: TokenManager
+    private lateinit var context: Context
+    private lateinit var incidentRepository: IncidentRepository
 
     @Before
     fun setup() {
-        mockApiService = mock(IncidentApiService::class.java)
-        repository = IncidentRepository(mockApiService, mock())
+        incidentApiService = mock()
+        tokenManager = mock()
+        context = mock()
+        incidentRepository = IncidentRepository(incidentApiService, tokenManager, context)
     }
 
     @Test
-    fun `getCompanies returns expected CompanyResponse`() = runBlocking {
-        val userId = "testUserId"
-        val expectedResponse = CompanyResponse(userId, listOf(Company("1", "Test Company")))
-
-        `when`(mockApiService.getCompanies(UserIdRequest(userId))).thenReturn(expectedResponse)
-
-        val result = repository.getCompanies(userId)
-
-        verify(mockApiService).getCompanies(UserIdRequest(userId))
-        assert(result == expectedResponse)
-    }
-
-    @Test
-    fun `createIncident returns expected Incident`() = runBlocking {
-        val description = "Test description"
-        val companyId = "testCompanyId"
-        val userId = "testUserId"
-        val expectedIncident = Incident(
-            id = "testId",
-            user_id = userId,
-            company_id = companyId,
-            description = description,
-            state = "open",
-            channel = "mobile",
-            priority = "medium",
-            creation_date = ZonedDateTime.now()
+    fun `getCompanies should return companies when user id exists`() = runTest {
+        // Arrange
+        whenever(tokenManager.getUserId()).thenReturn("user1")
+        whenever(incidentApiService.getCompanies(any())).thenReturn(
+            TestData.mockCompany.let { company ->
+                com.misw.abcalls.data.model.CompanyResponse(
+                    userId = "user1",
+                    companies = listOf(company)
+                )
+            }
         )
 
-        `when`(mockApiService.createIncident(any(), any(), any(), any())).thenReturn(expectedIncident)
+        // Act
+        val result = incidentRepository.getCompanies()
 
-        val result = repository.createIncident(description, companyId, userId, null)
+        // Assert
+        verify(incidentApiService).getCompanies(any())
+        assertEquals("user1", result?.userId)
+        assertEquals(1, result?.companies?.size)
+    }
 
-        verify(mockApiService).createIncident(any(), any(), any(), any())
-        assert(result == expectedIncident)
+    @Test
+    fun `getUserIncidents should return incidents list`() = runTest {
+        // Arrange
+        whenever(incidentApiService.getUserIncidents()).thenReturn(
+            com.misw.abcalls.data.model.IncidentListResponse(
+                incidents = listOf(TestData.mockIncident)
+            )
+        )
+
+        // Act
+        val result = incidentRepository.getUserIncidents()
+
+        // Assert
+        assertTrue(result.isSuccess)
+        assertEquals(1, result.getOrNull()?.size)
     }
 }

@@ -53,11 +53,8 @@ class IncidentRepository @Inject constructor(
     suspend fun getUserIncidents(): Result<List<Incident>> {
         return try {
             val response = incidentApiService.getUserIncidents()
-            Log.d("IncidentRepository", "Received ${response.incidents.size} incidents from API")
-            Log.d("IncidentRepository", "First incident: ${response.incidents.firstOrNull()}")
             Result.success(response.incidents)
         } catch (e: Exception) {
-            Log.e("IncidentRepository", "Error fetching incidents", e)
             Result.failure(e)
         }
     }

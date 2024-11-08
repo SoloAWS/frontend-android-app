@@ -234,11 +234,7 @@ class UserRegistrationViewModel @Inject constructor(
     }
 
     fun resetError() {
-        try {
-            _uiState.value = _uiState.value.copy(error = null)
-        } catch (e: Exception) {
-            Log.e("UserRegistrationVM", "Error resetting error state", e)
-        }
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     fun resetSuccess() {

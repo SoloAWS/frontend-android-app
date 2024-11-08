@@ -27,10 +27,6 @@ fun IncidentListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isRefreshing = remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState) {
-        Log.d("IncidentListScreen", "State updated - Incidents: ${uiState.incidents.size}")
-    }
-
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
