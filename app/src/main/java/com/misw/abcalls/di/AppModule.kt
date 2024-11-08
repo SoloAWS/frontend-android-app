@@ -6,6 +6,7 @@ import com.misw.abcalls.data.api.IncidentApiService
 import com.misw.abcalls.data.api.TokenManager
 import com.misw.abcalls.data.api.UserApiService
 import com.misw.abcalls.data.repository.IncidentRepository
+import com.misw.abcalls.data.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -66,8 +67,18 @@ object AppModule {
     @Singleton
     fun provideIncidentRepository(
         apiService: IncidentApiService,
+        tokenManager: TokenManager,
         @ApplicationContext context: Context
     ): IncidentRepository {
-        return IncidentRepository(apiService, context)
+        return IncidentRepository(apiService, tokenManager,  context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        userApiService: UserApiService,
+        tokenManager: TokenManager,
+    ): UserRepository {
+        return UserRepository(userApiService, tokenManager)
     }
 }

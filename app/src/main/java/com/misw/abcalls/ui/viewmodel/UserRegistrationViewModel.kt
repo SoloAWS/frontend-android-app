@@ -104,6 +104,8 @@ class UserRegistrationViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+
                 val registrationResult = userRepository.registerUser(
                     firstName = currentState.firstName,
                     lastName = currentState.lastName,
@@ -113,34 +115,54 @@ class UserRegistrationViewModel @Inject constructor(
                     documentId = currentState.documentId
                 )
 
-                if (registrationResult.isSuccess) {
-                    val loginResult = userRepository.login(
-                        email = currentState.email,
-                        password = currentState.password
-                    )
+                registrationResult.fold(
+                    onSuccess = { response ->
+                        val loginResult = userRepository.login(
+                            email = currentState.email,
+                            password = currentState.password
+                        )
 
-                    if (loginResult.isSuccess) {
+                        if (loginResult.isSuccess) {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    registrationSuccess = true
+                                )
+                            }
+                        } else {
+                            throw loginResult.exceptionOrNull() ?: Exception("Error en inicio de sesión")
+                        }
+                    },
+                    onFailure = { error ->
+                        val errorMessage = when (error) {
+                            is UserRepository.RegistrationError.EmailAlreadyRegistered ->
+                                "Este correo electrónico ya está registrado"
+
+                            is UserRepository.RegistrationError.NoCompanyAssociated ->
+                                "El usuario no está asociado a ninguna empresa registrada"
+
+                            is UserRepository.RegistrationError.UnknownError ->
+                                if (error.message.contains("connection"))
+                                    "Error de conexión. Por favor verifica tu conexión a internet"
+                                else
+                                    error.message
+
+                            else -> "Error en el registro. Por favor intenta nuevamente"
+                        }
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                registrationSuccess = true
+                                error = errorMessage
                             )
                         }
-                    } else {
-                        throw loginResult.exceptionOrNull() ?: Exception("Login failed")
                     }
-                } else {
-                    throw registrationResult.exceptionOrNull() ?: Exception("Registration failed")
-                }
+                )
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = when {
-                            e.message?.contains("400") == true -> "Este correo ya está en uso"
-                            e.message?.contains("connection") == true -> "Error de conexión. Intenta nuevamente"
-                            else -> "Error en el registro. Por favor intenta nuevamente: ${e.message}"
-                        }
+                        error = "Error inesperado. Por favor intenta nuevamente"
                     )
                 }
             }

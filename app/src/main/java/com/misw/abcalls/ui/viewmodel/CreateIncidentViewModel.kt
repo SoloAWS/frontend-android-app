@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.misw.abcalls.data.api.TokenManager
 import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.model.Company
 import com.misw.abcalls.data.repository.IncidentRepository
@@ -17,19 +18,19 @@ import java.util.UUID
 
 @HiltViewModel
 class CreateIncidentViewModel @Inject constructor(
-    private val incidentRepository: IncidentRepository
+    private val incidentRepository: IncidentRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreateIncidentUiState())
     val uiState: StateFlow<CreateIncidentUiState> = _uiState
 
-    fun loadCompanies(userId: String) {
+    fun loadCompanies() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val companyResponse = incidentRepository.getCompanies(userId)
+                val companyResponse = incidentRepository.getCompanies()
                 _uiState.update {
-                    it.copy(companies = companyResponse.companies, isLoading = false)
+                    it.copy(companies = companyResponse!!.companies, isLoading = false)
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -39,11 +40,11 @@ class CreateIncidentViewModel @Inject constructor(
         }
     }
 
-    fun createIncident(description: String, companyId: String, userId: String, fileUri: Uri?) {
+    fun createIncident(description: String, companyId: String, fileUri: Uri?) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val incident = incidentRepository.createIncident(description, companyId, userId, fileUri)
+                val incident = incidentRepository.createIncident(description, companyId, fileUri)
                 _uiState.update { it.copy(createdIncident = incident, isLoading = false) }
             } catch (e: Exception) {
 

@@ -27,6 +27,14 @@ fun IncidentListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isRefreshing = remember { mutableStateOf(false) }
 
+    LaunchedEffect(uiState) {
+        Log.d("IncidentListScreen", "State updated - Incidents: ${uiState.incidents.size}")
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -193,7 +201,6 @@ fun PriorityChip(priority: String) {
         "medium" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
         else -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     }
-    Log.d("incident chip", "${priority} ${priority.lowercase()}")
     Surface(
         color = backgroundColor,
         contentColor = contentColor,

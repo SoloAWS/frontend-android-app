@@ -5,7 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface UserApiService {
-    @POST("/user/user/")
+    @POST("/user-management/user/create")
     suspend fun registerUser(@Body request: UserRegistrationRequest): UserRegistrationResponse
 
     @POST("/auth/login")

@@ -2,7 +2,9 @@ package com.misw.abcalls.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.misw.abcalls.data.api.IncidentApiService
+import com.misw.abcalls.data.api.TokenManager
 import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.model.CompanyResponse
 import com.misw.abcalls.data.model.UserIdRequest
@@ -17,16 +19,19 @@ import javax.inject.Singleton
 @Singleton
 class IncidentRepository @Inject constructor(
     private val incidentApiService: IncidentApiService,
+    private val tokenManager: TokenManager,
     private val context: Context
 ) {
-    suspend fun getCompanies(userId: String): CompanyResponse {
-        return incidentApiService.getCompanies(UserIdRequest(userId))
+    suspend fun getCompanies(): CompanyResponse? {
+        return tokenManager.getUserId()?.let { userId ->
+            incidentApiService.getCompanies(UserIdRequest(userId))
+        }
     }
 
-    suspend fun createIncident(description: String, companyId: String, userId: String, fileUri: Uri?): Incident {
+    suspend fun createIncident(description: String, companyId: String, fileUri: Uri?): Incident? {
         val descriptionPart = description.toRequestBody("text/plain".toMediaTypeOrNull())
         val companyIdPart = companyId.toRequestBody("text/plain".toMediaTypeOrNull())
-        val userIdPart = userId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val userIdPart = tokenManager.getUserId()?.toRequestBody("text/plain".toMediaTypeOrNull())
 
         val filePart = fileUri?.let { uri ->
             val file = File(context.cacheDir, "temp_file")
@@ -39,14 +44,20 @@ class IncidentRepository @Inject constructor(
             MultipartBody.Part.createFormData("file", file.name, requestFile)
         }
 
-        return incidentApiService.createIncident(descriptionPart, userIdPart, companyIdPart, filePart)
+        return userIdPart?.let {
+            incidentApiService.createIncident(descriptionPart,
+                it, companyIdPart, filePart)
+        }
     }
 
     suspend fun getUserIncidents(): Result<List<Incident>> {
         return try {
             val response = incidentApiService.getUserIncidents()
+            Log.d("IncidentRepository", "Received ${response.incidents.size} incidents from API")
+            Log.d("IncidentRepository", "First incident: ${response.incidents.firstOrNull()}")
             Result.success(response.incidents)
         } catch (e: Exception) {
+            Log.e("IncidentRepository", "Error fetching incidents", e)
             Result.failure(e)
         }
     }

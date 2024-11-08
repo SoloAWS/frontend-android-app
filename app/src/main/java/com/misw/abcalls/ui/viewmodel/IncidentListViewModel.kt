@@ -1,5 +1,6 @@
 package com.misw.abcalls.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.misw.abcalls.data.model.Incident
@@ -38,7 +39,6 @@ class IncidentListViewModel @Inject constructor(
             _shouldRefresh
                 .filter { it }
                 .collect {
-                    loadIncidents()
                     _shouldRefresh.value = false
                 }
         }
@@ -51,16 +51,22 @@ class IncidentListViewModel @Inject constructor(
                 val result = incidentRepository.getUserIncidents()
                 result.fold(
                     onSuccess = { incidents ->
+                        Log.d("IncidentListViewModel", "Received ${incidents.size} incidents")
+                        Log.d("IncidentListViewModel", "Current state incidents: ${_uiState.value.incidents.size}")
+                        val sortedIncidents = incidents.sortedByDescending { it.creation_date }
                         _uiState.update { state ->
                             state.copy(
-                                incidents = incidents.sortedByDescending { it.creation_date },
-                                filteredIncidents = incidents.sortedByDescending { it.creation_date },
+                                incidents = sortedIncidents,
+                                filteredIncidents = sortedIncidents,
                                 isLoading = false,
-                                error = null
+                                error = null,
+                                searchQuery = state.searchQuery // Preserve search query
                             )
                         }
+                        Log.d("IncidentListViewModel", "Updated state incidents: ${_uiState.value.incidents.size}")
                     },
-                    onFailure = { _ ->
+                    onFailure = { error ->
+                        Log.e("IncidentListViewModel", "Error updating incidents", error)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -70,6 +76,7 @@ class IncidentListViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                Log.e("IncidentListViewModel", "Exception updating incidents", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,

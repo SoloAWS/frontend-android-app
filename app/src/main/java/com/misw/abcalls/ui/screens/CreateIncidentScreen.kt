@@ -10,6 +10,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.misw.abcalls.ui.viewmodel.CreateIncidentViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.misw.abcalls.data.model.Company
@@ -19,7 +20,7 @@ import com.misw.abcalls.data.model.Company
 fun CreateIncidentScreen(
     onNavigateBack: () -> Unit,
     onIncidentCreated: () -> Unit,
-    viewModel: CreateIncidentViewModel = viewModel()
+    viewModel: CreateIncidentViewModel = hiltViewModel()
 ) {
     var selectedCompany by remember { mutableStateOf<Company?>(null) }
     var incidentDescription by remember { mutableStateOf("") }
@@ -34,11 +35,8 @@ fun CreateIncidentScreen(
 
     val context = LocalContext.current
 
-    // Fixed user UUID for now
-    val userId = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
-
-    LaunchedEffect(userId) {
-        viewModel.loadCompanies(userId)
+    LaunchedEffect(Unit) {
+        viewModel.loadCompanies()
     }
 
     LaunchedEffect(uiState.createdIncident) {
@@ -165,7 +163,7 @@ fun CreateIncidentScreen(
                     descriptionError = if (incidentDescription.isBlank()) "La descripción es requerida" else null
 
                     if (selectedCompany != null && descriptionError == null && fileError == null) {
-                        viewModel.createIncident(incidentDescription, selectedCompany!!.id, userId, selectedFile)
+                        viewModel.createIncident(incidentDescription, selectedCompany!!.id, selectedFile)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
