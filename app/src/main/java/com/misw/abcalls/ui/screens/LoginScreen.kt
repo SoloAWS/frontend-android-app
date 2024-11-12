@@ -5,10 +5,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.misw.abcalls.R
 import com.misw.abcalls.ui.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +34,7 @@ fun LoginScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Inicio de Sesión",
+                        stringResource(R.string.log_in),
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center
                     )
@@ -53,7 +55,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.updateEmail(it) },
-                label = { Text("Correo Electrónico") },
+                label = { Text(stringResource(id = R.string.email)) },
                 singleLine = true,
                 isError = uiState.emailError != null,
                 supportingText = { uiState.emailError?.let { Text(it) } },
@@ -65,7 +67,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = { viewModel.updatePassword(it) },
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(id = R.string.password)) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 isError = uiState.passwordError != null,
@@ -88,7 +90,7 @@ fun LoginScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    Text("Iniciar Sesión")
+                    Text(stringResource(id = R.string.log_in))
                 }
             }
 
@@ -99,9 +101,9 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("¿No tienes una cuenta?")
+                Text(stringResource(R.string.need_account))
                 TextButton(onClick = onNavigateToRegister) {
-                    Text("Regístrate")
+                    Text(stringResource(R.string.sign_up_action))
                 }
             }
         }
@@ -110,11 +112,11 @@ fun LoginScreen(
     if (uiState.error != null) {
         AlertDialog(
             onDismissRequest = { viewModel.resetError() },
-            title = { Text("Error") },
+            title = { Text(stringResource(id = R.string.error)) },
             text = { Text(uiState.error!!) },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetError() }) {
-                    Text("OK")
+                    Text(stringResource(id = R.string.ok))
                 }
             }
         )

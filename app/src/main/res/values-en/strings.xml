@@ -38,4 +38,7 @@
     <string name="user_sign_up">User Registration</string>
     <string name="escalated">Escalated</string>
     <string name="app_name">ABCalls</string>
+    <string name="log_in">Log In</string>
+    <string name="need_account">New user?</string>
+    <string name="sign_up_action">Sign up</string>
 </resources>

@@ -38,4 +38,7 @@
     <string name="try_again">Reintentar</string>
     <string name="user_sign_up">Registro de Usuario</string>
     <string name="escalated">Escalado</string>
+    <string name="log_in">Inicio de Sesión</string>
+    <string name="need_account">¿No tienes una cuenta?</string>
+    <string name="sign_up_action">Regístrate</string>
 </resources>
