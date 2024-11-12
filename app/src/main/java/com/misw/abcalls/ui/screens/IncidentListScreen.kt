@@ -1,6 +1,5 @@
 package com.misw.abcalls.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -17,6 +17,7 @@ import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.ui.viewmodel.IncidentListViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.misw.abcalls.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +35,7 @@ fun IncidentListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Incidentes") },
+                title = { Text(stringResource(R.string.incients_title)) },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -48,7 +49,7 @@ fun IncidentListScreen(
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = "Crear incidente",
+                    contentDescription = stringResource(id = R.string.incident_create_title),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -66,8 +67,8 @@ fun IncidentListScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("Buscador") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+                placeholder = { Text(stringResource(R.string.search)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search)) },
                 singleLine = true
             )
 
@@ -92,7 +93,7 @@ fun IncidentListScreen(
                         ) {
                             Text(uiState.error!!)
                             Button(onClick = { viewModel.retryLoading() }) {
-                                Text("Reintentar")
+                                Text(stringResource(R.string.try_again))
                             }
                         }
                     }
@@ -113,7 +114,7 @@ fun IncidentListScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("No se encontraron incidentes")
+                                    Text(stringResource(R.string.no_incidents_found))
                                 }
                             }
 
@@ -122,7 +123,7 @@ fun IncidentListScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("No tienes incidentes registrados")
+                                    Text(stringResource(R.string.no_inicidents_registered))
                                 }
                             }
 
@@ -171,10 +172,10 @@ fun IncidentCard(incident: Incident) {
                 PriorityChip(priority = incident.priority)
                 Text(
                     text = when(incident.state.lowercase()) {
-                        "open" -> "Abierto"
-                        "closed" -> "Resuelto"
-                        "escalated" -> "Escalado"
-                        "in_progress" -> "En Progreso"
+                        "open" -> stringResource(R.string.open)
+                        "closed" -> stringResource(R.string.resolved)
+                        "escalated" -> stringResource(R.string.escalated)
+                        "in_progress" -> stringResource(R.string.in_progress)
                         else -> incident.state
                     },
                     style = MaterialTheme.typography.bodyMedium
@@ -205,9 +206,9 @@ fun PriorityChip(priority: String) {
     ) {
         Text(
             text = when (priority.lowercase()) {
-                "high" -> "Alto"
-                "medium" -> "Medio"
-                "low" -> "Bajo"
+                "high" -> stringResource(R.string.high)
+                "medium" -> stringResource(R.string.medium)
+                "low" -> stringResource(R.string.low)
                 else -> priority
             },
             style = MaterialTheme.typography.bodySmall,

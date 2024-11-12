@@ -11,6 +11,8 @@ import org.junit.Test
 import org.mockito.kotlin.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 
 class IncidentListViewModelTest {
     @get:Rule
@@ -59,5 +61,47 @@ class IncidentListViewModelTest {
             assertEquals(1, state.filteredIncidents.size)
             assertEquals("test", state.searchQuery)
         }
+    }
+
+    @Test
+    fun `updateSearchQuery with empty query should show all incidents`() = runTest {
+        // Arrange
+        whenever(incidentRepository.getUserIncidents())
+            .thenReturn(Result.success(listOf(TestData.mockIncident)))
+        viewModel.refresh()
+
+        // Act
+        viewModel.updateSearchQuery("")
+
+        // Assert
+        assertEquals(1, viewModel.uiState.value.filteredIncidents.size)
+    }
+
+    @Test
+    fun `refresh should handle network error`() = runTest {
+        // Arrange
+        whenever(incidentRepository.getUserIncidents())
+            .thenReturn(Result.failure(Exception("Network error")))
+
+        // Act
+        viewModel.refresh()
+
+        // Assert
+        assertNotNull(viewModel.uiState.value.error)
+        assertTrue(viewModel.uiState.value.incidents.isEmpty())
+    }
+
+    @Test
+    fun `retryLoading should clear error state and reload incidents`() = runTest {
+        // Arrange
+        whenever(incidentRepository.getUserIncidents())
+            .thenReturn(Result.success(listOf(TestData.mockIncident)))
+
+        // Act
+        viewModel.retryLoading()
+
+        // Assert
+        assertNull(viewModel.uiState.value.error)
+        assertEquals(1, viewModel.uiState.value.incidents.size)
     }
 }

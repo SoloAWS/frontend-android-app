@@ -9,10 +9,11 @@ import androidx.compose.material.icons.filled.*
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.misw.abcalls.ui.viewmodel.CreateIncidentViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.misw.abcalls.R
 import com.misw.abcalls.data.model.Company
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +51,8 @@ fun CreateIncidentScreen(
             showErrorDialog = true
         }
     }
+    val fileNotSupportedMessage = stringResource(R.string.file_not_supported)
+    val fileTooLarge = stringResource(R.string.file_too_large)
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -61,10 +64,10 @@ fun CreateIncidentScreen(
 
             when {
                 !allowedTypes.contains(mimeType) -> {
-                    fileError = "Formato de archivo no soportado. Formatos permitidos: jpg, png, gif, pdf, doc, docx, txt"
+                    fileError = fileNotSupportedMessage
                 }
                 fileSize > 10 * 1024 * 1024 -> {
-                    fileError = "El archivo excede el límite de 10 MB"
+                    fileError = fileTooLarge
                 }
                 else -> {
                     selectedFile = it
@@ -77,10 +80,10 @@ fun CreateIncidentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Crear Incidente", color = MaterialTheme.colorScheme.onPrimary, textAlign = TextAlign.Center) },
+                title = { Text(stringResource(R.string.incident_create_title), color = MaterialTheme.colorScheme.onPrimary, textAlign = TextAlign.Center) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -101,9 +104,11 @@ fun CreateIncidentScreen(
                     value = selectedCompany?.name ?: "",
                     onValueChange = { },
                     readOnly = true,
-                    label = { Text("Nombre Compañía") },
+                    label = { Text(stringResource(R.string.company_name)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
                 )
                 ExposedDropdownMenu(
                     expanded = isDropdownExpanded,
@@ -131,7 +136,7 @@ fun CreateIncidentScreen(
                         descriptionError = null
                     }
                 },
-                label = { Text("Descripción") },
+                label = { Text(stringResource(R.string.description)) },
                 isError = descriptionError != null,
                 supportingText = { descriptionError?.let { Text(it) } },
                 modifier = Modifier
@@ -144,23 +149,23 @@ fun CreateIncidentScreen(
             OutlinedTextField(
                 value = selectedFile?.lastPathSegment ?: "",
                 onValueChange = { },
-                label = { Text("Adjuntar archivo (opcional)") },
+                label = { Text(stringResource(R.string.attach_file_optional)) },
                 isError = fileError != null,
                 supportingText = { fileError?.let { Text(it) } },
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { launcher.launch("*/*") }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adjuntar archivo")
+                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.attach_file))
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
+             val descriptionRequired = stringResource(id = R.string.description_required)
             Button(
                 onClick = {
-                    descriptionError = if (incidentDescription.isBlank()) "La descripción es requerida" else null
+                    descriptionError = if (incidentDescription.isBlank()) descriptionRequired else null
 
                     if (selectedCompany != null && descriptionError == null && fileError == null) {
                         viewModel.createIncident(incidentDescription, selectedCompany!!.id, selectedFile)
@@ -169,7 +174,7 @@ fun CreateIncidentScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = selectedCompany != null
             ) {
-                Text("Crear", color = MaterialTheme.colorScheme.onPrimary)
+                Text(stringResource(R.string.create), color = MaterialTheme.colorScheme.onPrimary)
             }
 
             if (uiState.isLoading) {
@@ -185,15 +190,15 @@ fun CreateIncidentScreen(
                 viewModel.resetState()
                 onIncidentCreated()
             },
-            title = { Text("Éxito") },
-            text = { Text("El incidente se ha creado exitosamente.") },
+            title = { Text(stringResource(R.string.success)) },
+            text = { Text(stringResource(R.string.incident_success_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showSuccessDialog = false
                     viewModel.resetState()
                     onIncidentCreated()
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -205,14 +210,14 @@ fun CreateIncidentScreen(
                 showErrorDialog = false
                 viewModel.resetState()
             },
-            title = { Text("Error") },
-            text = { Text("Ha ocurrido un error al crear el incidente. Por favor, inténtelo de nuevo.") },
+            title = { Text(stringResource(R.string.error)) },
+            text = { Text(stringResource(R.string.error_creating_incident)) },
             confirmButton = {
                 TextButton(onClick = {
                     showErrorDialog = false
                     viewModel.resetState()
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )

@@ -5,9 +5,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.misw.abcalls.R
 import com.misw.abcalls.data.model.DocumentType
 import com.misw.abcalls.ui.viewmodel.UserRegistrationViewModel
 
@@ -31,7 +33,7 @@ fun UserRegistrationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Registro de Usuario") },
+                title = { Text(stringResource(R.string.user_sign_up)) },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -49,7 +51,7 @@ fun UserRegistrationScreen(
             OutlinedTextField(
                 value = uiState.firstName,
                 onValueChange = { viewModel.updateFirstName(it) },
-                label = { Text("Nombre") },
+                label = { Text(stringResource(R.string.first_name)) },
                 isError = uiState.firstNameError != null,
                 supportingText = { uiState.firstNameError?.let { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
@@ -58,7 +60,7 @@ fun UserRegistrationScreen(
             OutlinedTextField(
                 value = uiState.lastName,
                 onValueChange = { viewModel.updateLastName(it) },
-                label = { Text("Apellido") },
+                label = { Text(stringResource(R.string.last_name)) },
                 isError = uiState.lastNameError != null,
                 supportingText = { uiState.lastNameError?.let { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
@@ -72,7 +74,7 @@ fun UserRegistrationScreen(
                     value = uiState.documentType.displayName,
                     onValueChange = { },
                     readOnly = true,
-                    label = { Text("Tipo de documento") },
+                    label = { Text(stringResource(R.string.document_type)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDocumentTypeExpanded) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -99,7 +101,7 @@ fun UserRegistrationScreen(
             OutlinedTextField(
                 value = uiState.documentId,
                 onValueChange = { viewModel.updateDocumentId(it) },
-                label = { Text("Número de documento") },
+                label = { Text(stringResource(R.string.document_id)) },
                 isError = uiState.documentIdError != null,
                 supportingText = { uiState.documentIdError?.let { Text(it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -108,7 +110,7 @@ fun UserRegistrationScreen(
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.updateEmail(it) },
-                label = { Text("Correo electrónico") },
+                label = { Text(stringResource(R.string.email)) },
                 isError = uiState.emailError != null,
                 supportingText = { uiState.emailError?.let { Text(it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -117,7 +119,7 @@ fun UserRegistrationScreen(
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = { viewModel.updatePassword(it) },
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(R.string.password)) },
                 visualTransformation = PasswordVisualTransformation(),
                 isError = uiState.passwordError != null,
                 supportingText = { uiState.passwordError?.let { Text(it) } },
@@ -127,7 +129,7 @@ fun UserRegistrationScreen(
             OutlinedTextField(
                 value = uiState.confirmPassword,
                 onValueChange = { viewModel.updateConfirmPassword(it) },
-                label = { Text("Confirmar contraseña") },
+                label = { Text(stringResource(R.string.confirm_password)) },
                 visualTransformation = PasswordVisualTransformation(),
                 isError = uiState.confirmPasswordError != null,
                 supportingText = { uiState.confirmPasswordError?.let { Text(it) } },
@@ -142,7 +144,7 @@ fun UserRegistrationScreen(
                     checked = uiState.termsAccepted,
                     onCheckedChange = { viewModel.updateTermsAccepted(it) }
                 )
-                Text("Acepto términos y condiciones")
+                Text(stringResource(R.string.accept_terms))
             }
 
             Button(
@@ -156,7 +158,7 @@ fun UserRegistrationScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    Text("Registrarse")
+                    Text(stringResource(R.string.sign_up))
                 }
             }
 
@@ -164,7 +166,7 @@ fun UserRegistrationScreen(
                 onClick = onNavigateToLogin,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("¿Ya tienes una cuenta? Iniciar sesión")
+                Text(stringResource(R.string.existing_account))
             }
         }
     }
@@ -172,11 +174,11 @@ fun UserRegistrationScreen(
     if (uiState.error != null) {
         AlertDialog(
             onDismissRequest = { viewModel.resetError() },
-            title = { Text("Error") },
+            title = { Text(stringResource(id = R.string.error)) },
             text = { Text(uiState.error ?: "") },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetError() }) {
-                    Text("OK")
+                    Text(stringResource(id = R.string.ok))
                 }
             }
         )

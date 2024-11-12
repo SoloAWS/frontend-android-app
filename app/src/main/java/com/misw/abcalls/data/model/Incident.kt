@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class Incident(
     val id: String,
@@ -19,7 +20,7 @@ data class Incident(
         get() = try {
             val instant = Instant.parse(creation_date)
             val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.getDefault())
             localDateTime.format(formatter)
         } catch (e: Exception) {
             creation_date

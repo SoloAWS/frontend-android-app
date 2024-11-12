@@ -12,6 +12,8 @@ import org.mockito.kotlin.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
 
 class UserRegistrationViewModelTest {
     @get:Rule
@@ -80,5 +82,94 @@ class UserRegistrationViewModelTest {
             assertTrue(state.registrationSuccess)
             assertFalse(state.isLoading)
         }
+    }
+
+    @Test
+    fun `updateFirstName with valid name should not set error`() = runTest {
+        // Act
+        viewModel.updateFirstName("John")
+
+        // Assert
+        assertEquals("John", viewModel.uiState.value.firstName)
+        assertNull(viewModel.uiState.value.firstNameError)
+    }
+
+    @Test
+    fun `updateFirstName with invalid name should set error`() = runTest {
+        // Act
+        viewModel.updateFirstName("J")
+
+        // Assert
+        assertEquals("J", viewModel.uiState.value.firstName)
+        assertNotNull(viewModel.uiState.value.firstNameError)
+    }
+
+    @Test
+    fun `updateLastName with valid name should not set error`() = runTest {
+        // Act
+        viewModel.updateLastName("Doe")
+
+        // Assert
+        assertEquals("Doe", viewModel.uiState.value.lastName)
+        assertNull(viewModel.uiState.value.lastNameError)
+    }
+
+    @Test
+    fun `updatePassword with valid password should not set error`() = runTest {
+        // Act
+        viewModel.updatePassword("Password123!")
+
+        // Assert
+        assertEquals("Password123!", viewModel.uiState.value.password)
+        assertNull(viewModel.uiState.value.passwordError)
+    }
+
+    @Test
+    fun `updatePassword with invalid password should set error`() = runTest {
+        // Act
+        viewModel.updatePassword("weak")
+
+        // Assert
+        assertEquals("weak", viewModel.uiState.value.password)
+        assertNotNull(viewModel.uiState.value.passwordError)
+    }
+
+    @Test
+    fun `updateConfirmPassword with matching password should not set error`() = runTest {
+        // Arrange
+        viewModel.updatePassword("Password123!")
+
+        // Act
+        viewModel.updateConfirmPassword("Password123!")
+
+        // Assert
+        assertNull(viewModel.uiState.value.confirmPasswordError)
+    }
+
+    @Test
+    fun `updateConfirmPassword with non-matching password should set error`() = runTest {
+        // Arrange
+        viewModel.updatePassword("Password123!")
+
+        // Act
+        viewModel.updateConfirmPassword("Password456!")
+
+        // Assert
+        assertNotNull(viewModel.uiState.value.confirmPasswordError)
+    }
+
+    @Test
+    fun `updateTermsAccepted should update state`() = runTest {
+        // Act
+        viewModel.updateTermsAccepted(true)
+
+        // Assert
+        assertTrue(viewModel.uiState.value.termsAccepted)
+    }
+
+    @Test
+    fun `form should be invalid when required fields are empty`() = runTest {
+        // Assert
+        assertFalse(viewModel.isFormValid.value)
     }
 }
