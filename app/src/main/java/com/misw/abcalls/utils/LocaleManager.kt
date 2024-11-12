@@ -18,12 +18,6 @@ class LocaleManager(private val context: Context) {
         return Locale.getDefault()
     }
 
-    fun setSelectedLocale(locale: Locale) {
-        // Save the selected locale to shared preferences
-        sharedPreferences.edit().putString(SELECTED_LOCALE_KEY, locale.toLanguageTag()).apply()
-        updateConfiguration(locale)
-    }
-
     private fun updateConfiguration(locale: Locale) {
         val resources = context.resources
         val configuration = resources.configuration

@@ -4,9 +4,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.misw.abcalls.data.api.TokenManager
-import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.model.Company
+import com.misw.abcalls.data.model.Incident
 import com.misw.abcalls.data.repository.IncidentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import java.util.UUID
 
 @HiltViewModel
 class CreateIncidentViewModel @Inject constructor(
@@ -33,6 +31,7 @@ class CreateIncidentViewModel @Inject constructor(
                     it.copy(companies = companyResponse!!.companies, isLoading = false)
                 }
             } catch (e: Exception) {
+                e.message?.let { Log.e("error", it) }
                 _uiState.update {
                     it.copy(error = e.message ?: "Error loading companies", isLoading = false)
                 }
@@ -47,6 +46,7 @@ class CreateIncidentViewModel @Inject constructor(
                 val incident = incidentRepository.createIncident(description, companyId, fileUri)
                 _uiState.update { it.copy(createdIncident = incident, isLoading = false) }
             } catch (e: Exception) {
+                e.message?.let { Log.e("error", it) }
                 _uiState.update { it.copy(error = e.message ?: "Error creating incident", isLoading = false) }
             }
         }

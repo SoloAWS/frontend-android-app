@@ -1,9 +1,9 @@
 package com.misw.abcalls
 
-import Navigation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.misw.abcalls.navigation.Navigation
 import com.misw.abcalls.ui.theme.AbcallsTheme
 import com.misw.abcalls.utils.LocaleManager
 import dagger.hilt.android.AndroidEntryPoint

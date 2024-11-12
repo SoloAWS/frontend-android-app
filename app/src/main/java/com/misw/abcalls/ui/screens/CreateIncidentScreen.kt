@@ -1,20 +1,22 @@
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+package com.misw.abcalls.ui.screens
+
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.misw.abcalls.ui.viewmodel.CreateIncidentViewModel
 import com.misw.abcalls.R
 import com.misw.abcalls.data.model.Company
+import com.misw.abcalls.ui.viewmodel.CreateIncidentViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,7 +164,7 @@ fun CreateIncidentScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-             val descriptionRequired = stringResource(id = R.string.description_required)
+            val descriptionRequired = stringResource(id = R.string.description_required)
             Button(
                 onClick = {
                     descriptionError = if (incidentDescription.isBlank()) descriptionRequired else null
